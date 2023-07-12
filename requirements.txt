@@ -1,7 +1,9 @@
-langchain==0.0.125
+langchain==0.0.198
 pypdf
 chromadb
-openai
+openai~=0.27.8
 tiktoken
 typing-inspect==0.8.0
 typing_extensions==4.5.0
+python-dotenv~=1.0.0
+pathlib~=1.0.1
