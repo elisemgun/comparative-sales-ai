@@ -3,10 +3,12 @@ import os
 import csv
 from dotenv import load_dotenv
 from pathlib import Path
+
+from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.chains import ConversationalRetrievalChain
+from langchain.chains import ConversationalRetrievalChain, RetrievalQAWithSourcesChain
 from langchain.memory import ConversationBufferMemory
 from langchain.llms import OpenAI
 
@@ -34,15 +36,17 @@ class Main:
     def create_llm(vectordb):
         memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
         model = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0.1), vectordb.as_retriever(), memory=memory)
+        #model = RetrievalQAWithSourcesChain.from_llm(llm=ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo'), retriever=vectordb.as_retriever())
+
         return model
 
     @staticmethod
     def query(model, pdf, health_service):
-        query = f"Using only the information provided in the {pdf} policy document, could you please tell me if" \
-                f" the policy provides coverage for {health_service}? If it does, could you specify the extent of the" \
-                f" coverage in terms of either a percentage, yes/no or a dollar amount? Please also provide the page " \
-                f"numbers in the policy document where this information can be found." \
-                f"It is important that the page number references are on the format 'Page: 2, 5, 13'"
+        query = f"Using only the information provided in the {pdf} policy document, give the coverage for " \
+                f" {health_service}. If you can't find the answer say you dont know instead of making up an answer." \
+                f"Provide coverage in terms of either a percentage, yes/no or a dollar amount. Provide the relevant" \
+                f" page numbers as source, and quote the section in the document where this information can be found." \
+                f"The references should be on the format 'Answer: [answer to question] Page: [page numbers]'"
 
         result = model({"question": query})
         return result
@@ -62,7 +66,7 @@ class Main:
             # Query the model
             for health_service in services:
                 result = self.query(model, pdf, health_service=health_service)
-                # print(f"{health_service}: " + result["answer"])
+                print(f"{health_service}: " + result["answer"])
                 writer.writerow([health_service, result["answer"]])
 
 
