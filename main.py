@@ -8,7 +8,7 @@ from langchain.chat_models import ChatOpenAI
 from langchain.document_loaders import PyPDFLoader
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
-from langchain.chains import ConversationalRetrievalChain, RetrievalQAWithSourcesChain
+from langchain.chains import ConversationalRetrievalChain, RetrievalQAWithSourcesChain, RetrievalQA
 from langchain.memory import ConversationBufferMemory
 from langchain.llms import OpenAI
 
@@ -35,8 +35,10 @@ class Main:
     @staticmethod
     def create_llm(vectordb):
         memory = ConversationBufferMemory(memory_key="chat_history", return_messages=True)
-        model = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0.1), vectordb.as_retriever(), memory=memory)
-        #model = RetrievalQAWithSourcesChain.from_llm(llm=ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo'), retriever=vectordb.as_retriever())
+        model1 = ConversationalRetrievalChain.from_llm(OpenAI(temperature=0), vectordb.as_retriever(), memory=memory)
+        model = RetrievalQA.from_chain_type(llm=OpenAI(), chain_type="refine", retriever=vectordb.as_retriever(),
+                                            return_source_documents=True)
+        # model = RetrievalQAWithSourcesChain.from_llm(llm=ChatOpenAI(temperature=0, model_name='gpt-3.5-turbo'), retriever=vectordb.as_retriever())
 
         return model
 
@@ -48,7 +50,7 @@ class Main:
                 f" page numbers as source, and quote the section in the document where this information can be found." \
                 f"The references should be on the format 'Answer: [answer to question] Page: [page numbers]'"
 
-        result = model({"question": query})
+        result = model({"query": query})
         return result
 
     def start(self, pdf):
@@ -66,8 +68,9 @@ class Main:
             # Query the model
             for health_service in services:
                 result = self.query(model, pdf, health_service=health_service)
-                print(f"{health_service}: " + result["answer"])
-                writer.writerow([health_service, result["answer"]])
+                print(f"{health_service}: " + result["result"])
+                print(f"Page: {result['source_documents']}")
+                writer.writerow([health_service, result["result"]])
 
 
 if __name__ == "__main__":
