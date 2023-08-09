@@ -1,4 +1,5 @@
-# PDF Search
+# PDF Search  
+This project uses the OpenAI API to extract text from PDF documents, embed the text, and then use the embeddings to search for and answer questions about the content of the PDF.
 
 ## Usage:
 1. pip install -r requirements.txt
@@ -10,7 +11,7 @@
   
 
 ## Based these tutorials
-**Reading PDFS:**  
+**Reading PDFs:**  
 https://levelup.gitconnected.com/chatgpt-for-pdf-files-with-langchain-ef565c041796  
 
 **Search and ask:**  
