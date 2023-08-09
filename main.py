@@ -23,7 +23,7 @@ class Main:
     # Load document and create embeddings
     @staticmethod
     def load_doc(pdf):
-        loader = PyPDFLoader(pdf)  # PDF-path set as global variable
+        loader = PyPDFLoader(pdf)
         pages = loader.load_and_split()
 
         # Create the embeddings
@@ -44,21 +44,39 @@ class Main:
 
     @staticmethod
     def query(model, pdf, health_service):
-        query = f"Using only the information provided in the {pdf} policy document, give the coverage for " \
-                f" {health_service}. If you can't find the answer say you dont know instead of making up an answer." \
-                f"Provide coverage in terms of either a percentage, yes/no or a dollar amount. Provide the relevant" \
-                f" page numbers as source, and quote the section in the document where this information can be found." \
-                f"The references should be on the format 'Answer: [answer to question] Page: [page numbers]'"
+        response = openai.ChatCompletion.create(
+            messages=[
+                {'role': 'system',
+                 'content': f"Given the insurance policy document {pdf_path}, extract specific coverage details. "
+                            f"Return the prices, terms, and the exact sections from where these details were derived "
+                            f"for the type of coverage I will specify. For instance, if I say 'dental', your response "
+                            f"should be along the lines of: 'Emergency dental care covered up to $1500. Regular care "
+                            f"covered $100 per year. No deductibles. Source: Page 3, 23.' Ensure the information is "
+                            f"precise and derived directly from the document."
+                 },
+                {'role': 'user', 'content': "repatriation"},
+            ],
+            model='gpt-3.5-turbo',
+            temperature=0,
+        )
+        print(response['choices'][0]['message']['content'])
 
-        result = model({"query": query})
-        return result
+        return response
 
     def start(self, pdf):
         # Creates vector database and passes it to language model
         vectordb = self.load_doc(pdf)
         model = self.create_llm(vectordb)
         # List of health services to query
-        services = ["dental", "repatriation"]
+        services = ["Maximum cover (overall coverage limit)", "Outpatient limit",
+                    "Geographical coverage options",
+                    "Network coverage", "Deductible/Co-pay", "Age limit", "Surgeries (inpatient & outpatient)",
+                    "Dental", "Vision", "Screenings & Vaccines", "Medical History Disregarded", "Maternity",
+                    "Complementary therapies (massage therapy, osteopaths, chiropodists and podiatrists, "
+                    "chiropractors, homeopaths, dietitian and acupuncture)",
+                    "Outpatient psychiatric, psychologist or therapeutic treatment", "Repatriation & Evacuation",
+                    "Prescription Medication (inpatient & outpatient)", "Home health nursing",
+                    "Diagnostic study services (CT, PET scans, etc.)", "Hospital cash benefit", "Allergy treatments"]
 
         # Creates CSV file of answers
         with open('coverage.csv', 'w', newline='') as file:
