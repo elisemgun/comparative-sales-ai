@@ -1,4 +1,4 @@
-# PDF Search  
+# Search and extract info from PDFs 
 This project uses the OpenAI API to extract text from PDF documents, embed the text, and then use the embeddings to search for and answer questions about the content of the PDF.
 
 ## Usage:
